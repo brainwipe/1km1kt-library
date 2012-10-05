@@ -1,0 +1,25 @@
+parameters:
+#    thousand_monkeys_library.example.class: ThousandMonkeys\LibraryBundle\Example
+    phpbb_user_provider.class: ThousandMonkeys\LibraryBundle\Security\User\PHPBBUserProvider
+    phpbb_auth_provider.class: ThousandMonkeys\LibraryBundle\Security\Authentication\Provider\PHPBBProvider
+    phpbb_auth_listener.class: ThousandMonkeys\LibraryBundle\Security\Firewall\PHPBBListener
+
+services:
+#    thousand_monkeys_library.example:
+#        class: %thousand_monkeys_library.example.class%
+#        arguments: [@service_id, "plain_value", %parameter%]
+    phpbb_user_provider:
+        class: %phpbb_user_provider.class%
+
+    phpbb.security.authentication.provider:
+        class: %phpbb_auth_provider.class%
+        arguments: ["", %kernel.cache_dir%/security/nonces]
+
+    phpbb.security.authentication.listener:
+        class: %phpbb_auth_listener.class%
+        arguments: [@security.context, @security.authentication.manager]
+        tags:
+            - { name: monolog.logger, channel: security }
+    
+
+

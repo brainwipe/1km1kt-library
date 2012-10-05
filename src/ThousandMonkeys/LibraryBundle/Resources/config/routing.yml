@@ -1,0 +1,12 @@
+ThousandMonkeysLibraryBundle_homepage:
+    pattern:  /hello/{name}
+    defaults: { _controller: ThousandMonkeysLibraryBundle:Default:index }
+version_add:
+    pattern: /version/add
+    defaults: { _controller: ThousandMonkeysLibraryBundle:Version:add }
+version_dummy:
+    pattern: /version/dummy
+    defaults: { _controller: ThousandMonkeysLibraryBundle:Version:dummy }
+version_show:
+    pattern: /version/{versionId}
+    defaults: { _controller: ThousandMonkeysLibraryBundle:Version:show }

@@ -1,0 +1,9 @@
+parameters:
+#    thousand_monkeys_library.example.class: ThousandMonkeys\LibraryBundle\Example
+    phpbb_auth_security_factory.class: ThousandMonkeys\LibraryBundle\DependencyInjection\Security\Factory\PHPBBFactory
+
+services:
+    phpbb.security.authentication.factory:
+        class: %phpbb_auth_security_factory.class%
+        tags:
+            - { name: security.listener.factory }

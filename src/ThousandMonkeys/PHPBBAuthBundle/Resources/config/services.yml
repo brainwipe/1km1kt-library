@@ -1,0 +1,20 @@
+parameters:
+    phpbb_user_provider.class: ThousandMonkeys\PHPBBAuthBundle\Security\User\PHPBBUserProvider
+    phpbb_auth_provider.class: ThousandMonkeys\PHPBBAuthBundle\Security\Authentication\PHPBBProvider
+    phpbb_auth_listener.class: ThousandMonkeys\PHPBBAuthBundle\Security\Firewall\PHPBBListener
+
+services:
+    phpbb_user_provider:
+        class: %phpbb_user_provider.class%
+        arguments: ['@service_container']
+
+    phpbb.security.authentication.provider:
+        class: %phpbb_auth_provider.class%
+        arguments: ["", %kernel.cache_dir%/security/nonces]
+
+    phpbb.security.authentication.listener:
+        class: %phpbb_auth_listener.class%
+        arguments: [@security.context, @security.authentication.manager]
+        tags:
+            - { name: monolog.logger, channel: security }
+    

@@ -1,0 +1,21 @@
+parameters:
+    database_driver: pdo_mysql
+    database_host: localhost
+    database_port: null
+    database_name: 2km2kt
+    database_user: 2km2kt
+    database_password: 2km2kt
+    mailer_transport: smtp
+    mailer_host: localhost
+    mailer_user: null
+    mailer_password: null
+    locale: en
+    secret: 10c1b63410c4dcab5c19e54220ae28feb
+    phpbb_forum_url: http://localhost/1km1kt/
+    phpbb_fourm_path: E:/Web/1KM1KT/phpbb3/
+    phpbb_db_server: localhost
+    phpbb_db_catalog: 1km1kt
+    phpbb_db_user: 1km1kt
+    phpbb_db_password: 1km1kt
+    phpbb_db_prefix: phpbb
+    phpbb_db_anonymous: 1
