@@ -182,6 +182,11 @@ class appdevUrlMatcher extends Symfony\Bundle\FrameworkBundle\Routing\Redirectab
             return array_merge($this->mergeDefaults($matches, array (  '_controller' => 'ThousandMonkeys\\LibraryBundle\\Controller\\VersionController::showAction',)), array('_route' => 'version_show'));
         }
 
+        // upload_index
+        if ($pathinfo === '/upload') {
+            return array (  '_controller' => 'ThousandMonkeys\\LibraryBundle\\Controller\\UploadController::indexAction',  '_route' => 'upload_index',);
+        }
+
         throw 0 < count($allow) ? new MethodNotAllowedException(array_unique($allow)) : new ResourceNotFoundException();
     }
 }

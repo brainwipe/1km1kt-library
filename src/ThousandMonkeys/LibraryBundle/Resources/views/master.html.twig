@@ -4,9 +4,10 @@
   		<link href="{{ asset('bundles/thousandmonkeyslibrary/bootstrap/css/bootstrap.css') }}" rel="stylesheet" type="text/css"/>
   		{% block stylesheets %}
   		{% endblock %}
-  		{% block scripts %}
 
+  		{% block scripts %}
   		{% endblock %}
+      <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
   </head>
   <body>
   	<div class="container-fluid">
@@ -19,10 +20,11 @@
 				
         <ul class="nav pull-right">
             <li>
-                <a href="#">
-                  
-                  
-                </a>
+                  {% if (app.security.getToken().getUser() != "") %}
+                    <a href="#">{{app.security.getToken().getUser().getUsername()}}</a>
+                    {% else %}
+                    <a href="{{ phpbb_forum_url }}/ucp.php?mode=login">Hey! Login!</a>
+                  {% endif %}
             </li>
         </ul>
 
@@ -32,6 +34,7 @@
 
 			</div>
 		</div>
+
   		{% block body %}
   		{% endblock %}
   	</div>

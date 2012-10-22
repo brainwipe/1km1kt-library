@@ -1,0 +1,48 @@
+{% extends 'ThousandMonkeysLibraryBundle::master.html.twig' %}
+{% block stylesheets %}
+	<link href="{{ asset('bundles/thousandmonkeyslibrary/css/upload.css') }}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block body %}
+<div class="container upload">
+  <h1>Upload</h1>
+  	Thank you for choosing to share your free RPG with the world! Get started by filling in the form below and clicking upload at the bottom. You will get a chance to add more information and files after.
+
+	<form action="#" method="post" {{ form_enctype(form) }}>
+    {{ form_errors(form) }}
+    
+
+    {% macro prototypeDoc(document) %}
+      <h2>2. What is the name of the document?</h2>
+      <p>If you're not sure, leave it as 'Core Rules'.</p>
+      {{form_widget(document.name)}}
+    {% endmacro %}
+
+    {% macro prototypeVer(version) %}
+      <h2>3. What version is the file?</h2>
+      <p>If you're not sure, leave it as '1'. Some designers like to call games in ongoing development as 'Beta'.</p>
+      {{form_widget(version.versionName)}}
+
+      <h2>4. Choose your file</h2>
+      <p>Start by uploading the core rules. If you have more files, then that's ok, you can add them later.</p>
+      {{form_widget(version.file)}}
+    {% endmacro %}
+
+    <h2>1. What is your game called?</h2>
+    {{form_widget(form.name)}}
+
+    {% for document in form.documents %}
+      {{_self.prototypeDoc(document)}}
+
+      {% for version in document.versions %}
+        {{_self.prototypeVer(version)}}
+      {% endfor %}
+
+    {% endfor %}
+    
+    {{ form_rest(form) }}
+
+    <button class="btn btn-primary" type="submit"><i class="icon-white icon-upload"></i> Upload</button>
+  	</form>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<?php
+namespace ThousandMonkeys\LibraryBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * @ORM\Entity
+ */
+class Game
+{
+	/**
+	 * @ORM\Id
+	 * @ORM\Column(type="integer")
+	 * @ORM\GeneratedValue(strategy="AUTO")
+	 */
+	protected $id;
+
+	/**
+	 * @ORM\Column(type="string")
+	 */
+	protected $name;
+
+	/**
+     * @ORM\OneToMany(targetEntity="Document", mappedBy="game")
+     */
+	protected $documents;
+
+	public function __construct()
+    {
+        $this->documents = new ArrayCollection();
+    }
+
+}

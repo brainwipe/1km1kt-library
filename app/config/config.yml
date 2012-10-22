@@ -23,6 +23,8 @@ framework:
 twig:
     debug:            %kernel.debug%
     strict_variables: %kernel.debug%
+    globals:
+        phpbb_forum_url: %phpbb_forum_url%
 
 # Assetic Configuration
 assetic:

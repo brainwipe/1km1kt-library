@@ -19,3 +19,5 @@ parameters:
     phpbb_db_password: 1km1kt
     phpbb_db_prefix: phpbb
     phpbb_db_anonymous: 1
+    version_upload_absolute_path: E:/Web/1km1kt-library/web/bundles/thousandmonkeyslibrary/documents
+    version_upload_web_path: http://localhost/2km2kt/bundles/thousandmonkeyslibrary/documents

@@ -10,3 +10,6 @@ version_dummy:
 version_show:
     pattern: /version/{versionId}
     defaults: { _controller: ThousandMonkeysLibraryBundle:Version:show }
+upload_index:
+    pattern: /upload
+    defaults: { _controller: ThousandMonkeysLibraryBundle:Upload:index }

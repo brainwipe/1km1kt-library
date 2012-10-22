@@ -8,7 +8,7 @@ class DefaultController extends Controller
 {
     public function indexAction($name)
     {
-		$user = $this->get('security.context');
+		$user = $this->getUser();
 
         return $this->render('ThousandMonkeysLibraryBundle:Default:index.html.twig', array('name' => $name, 'user' => $user));
     }
