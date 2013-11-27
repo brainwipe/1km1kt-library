@@ -62,6 +62,75 @@ class FormTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    /**
+     * __construct() should throw \\LogicException if the form attribute is invalid
+     * @expectedException \LogicException
+     */
+    public function testConstructorThrowsExceptionIfNoRelatedForm()
+    {
+        $dom = new \DOMDocument();
+        $dom->loadHTML('
+            <html>
+                <form id="bar">
+                    <input type="submit" form="nonexistent" />
+                </form>
+                <input type="text" form="nonexistent" />
+                <button />
+            </html>
+        ');
+
+        $nodes = $dom->getElementsByTagName('input');
+
+        $form = new Form($nodes->item(0), 'http://example.com');
+        $form = new Form($nodes->item(1), 'http://example.com');
+    }
+
+    public function testConstructorHandlesFormAttribute()
+    {
+        $dom = $this->createTestHtml5Form();
+
+        $inputElements = $dom->getElementsByTagName('input');
+        $buttonElements = $dom->getElementsByTagName('button');
+
+        // Tests if submit buttons are correctly assigned to forms
+        $form1 = new Form($buttonElements->item(1), 'http://example.com');
+        $this->assertSame($dom->getElementsByTagName('form')->item(0), $form1->getFormNode(), 'HTML5-compliant form attribute handled incorrectly');
+
+        $form1 = new Form($inputElements->item(3), 'http://example.com');
+        $this->assertSame($dom->getElementsByTagName('form')->item(0), $form1->getFormNode(), 'HTML5-compliant form attribute handled incorrectly');
+
+        $form2 = new Form($buttonElements->item(0), 'http://example.com');
+        $this->assertSame($dom->getElementsByTagName('form')->item(1), $form2->getFormNode(), 'HTML5-compliant form attribute handled incorrectly');
+    }
+
+    public function testConstructorHandlesFormValues()
+    {
+        $dom = $this->createTestHtml5Form();
+
+        $inputElements = $dom->getElementsByTagName('input');
+        $buttonElements = $dom->getElementsByTagName('button');
+
+        $form1 = new Form($inputElements->item(3), 'http://example.com');
+        $form2 = new Form($buttonElements->item(0), 'http://example.com');
+
+        // Tests if form values are correctly assigned to forms
+        $values1 = array(
+            'apples' => array('1', '2'),
+            'form_name' => 'form-1',
+            'button_1' => 'Capture fields',
+            'outer_field' => 'success'
+        );
+        $values2 = array(
+            'oranges' => array('1', '2', '3'),
+            'form_name' => 'form_2',
+            'button_2' => '',
+            'app_frontend_form_type_contact_form_type' => array('contactType' => '', 'firstName' => 'John')
+        );
+
+        $this->assertEquals($values1, $form1->getPhpValues(), 'HTML5-compliant form attribute handled incorrectly');
+        $this->assertEquals($values2, $form2->getPhpValues(), 'HTML5-compliant form attribute handled incorrectly');
+    }
+
     public function testMultiValuedFields()
     {
         $form = $this->createForm('<form>
@@ -127,6 +196,12 @@ class FormTest extends \PHPUnit_Framework_TestCase
                 array(),
             ),
             array(
+                'does not take into account input fields with an empty name attribute value',
+                '<input type="text" name="" value="foo" />
+                 <input type="submit" />',
+                array(),
+            ),
+            array(
                 'takes into account disabled input fields',
                 '<input type="text" name="foo" value="foo" disabled="disabled" />
                  <input type="submit" />',
@@ -135,6 +210,11 @@ class FormTest extends \PHPUnit_Framework_TestCase
             array(
                 'appends the submitted button value',
                 '<input type="submit" name="bar" value="bar" />',
+                array('bar' => array('InputFormField', 'bar')),
+            ),
+            array(
+                'appends the submitted button value for Button element',
+                '<button type="submit" name="bar" value="bar">Bar</button>',
                 array('bar' => array('InputFormField', 'bar')),
             ),
             array(
@@ -236,6 +316,18 @@ class FormTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function testSetValueOnMultiValuedFieldsWithMalformedName()
+    {
+        $form = $this->createForm('<form><input type="text" name="foo[bar]" value="bar" /><input type="text" name="foo[baz]" value="baz" /><input type="submit" /></form>');
+
+        try {
+            $form['foo[bar'] = 'bar';
+            $this->fail('->offsetSet() throws an \InvalidArgumentException exception if the name is malformed.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertTrue(true, '->offsetSet() throws an \InvalidArgumentException exception if the name is malformed.');
+        }
+    }
+
     public function testOffsetUnset()
     {
         $form = $this->createForm('<form><input type="text" name="foo" value="foo" /><input type="submit" /></form>');
@@ -271,6 +363,13 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $form = $this->createForm('<form><input type="checkbox" name="foo" value="foo" checked="checked" /><input type="text" name="bar" value="bar" /><input type="submit" /></form>');
         $form->setValues(array('foo' => false, 'bar' => 'foo'));
         $this->assertEquals(array('bar' => 'foo'), $form->getValues(), '->setValues() sets the values of fields');
+    }
+
+    public function testMultiselectSetValues()
+    {
+        $form = $this->createForm('<form><select multiple="multiple" name="multi"><option value="foo">foo</option><option value="bar">bar</option></select><input type="submit" /></form>');
+        $form->setValues(array('multi' => array("foo", "bar")));
+        $this->assertEquals(array('multi' => array('foo', 'bar')), $form->getValues(), '->setValue() sets the values of select');
     }
 
     public function testGetPhpValues()
@@ -661,11 +760,50 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $dom->loadHTML('<html>'.$form.'</html>');
 
         $nodes = $dom->getElementsByTagName('input');
+        $xPath = new \DOMXPath($dom);
+        $nodes = $xPath->query('//input | //button');
 
         if (null === $currentUri) {
             $currentUri = 'http://example.com/';
         }
 
         return new Form($nodes->item($nodes->length - 1), $currentUri, $method);
+    }
+
+    protected function createTestHtml5Form()
+    {
+        $dom = new \DOMDocument();
+        $dom->loadHTML('
+        <html>
+            <h1>Hello form</h1>
+            <form id="form-1" action="" method="POST">
+                <div><input type="checkbox" name="apples[]" value="1" checked /></div>
+                <input form="form_2" type="checkbox" name="oranges[]" value="1" checked />
+                <div><label></label><input form="form-1" type="hidden" name="form_name" value="form-1" /></div>
+                <input form="form-1" type="submit" name="button_1" value="Capture fields" />
+                <button form="form_2" type="submit" name="button_2">Submit form_2</button>
+            </form>
+            <input form="form-1" type="checkbox" name="apples[]" value="2" checked />
+            <form id="form_2" action="" method="POST">
+                <div><div><input type="checkbox" name="oranges[]" value="2" checked />
+                <input type="checkbox" name="oranges[]" value="3" checked /></div></div>
+                <input form="form_2" type="hidden" name="form_name" value="form_2" />
+                <input form="form-1" type="hidden" name="outer_field" value="success" />
+                <button form="form-1" type="submit" name="button_3">Submit from outside the form</button>
+                <div>
+                    <label for="app_frontend_form_type_contact_form_type_contactType">Message subject</label>
+                    <div>
+                        <select name="app_frontend_form_type_contact_form_type[contactType]" id="app_frontend_form_type_contact_form_type_contactType"><option selected="selected" value="">Please select subject</option><option id="1">Test type</option></select>
+                    </div>
+                </div>
+                <div>
+                    <label for="app_frontend_form_type_contact_form_type_firstName">Firstname</label>
+                    <input type="text" name="app_frontend_form_type_contact_form_type[firstName]" value="John" id="app_frontend_form_type_contact_form_type_firstName"/>
+                </div>
+            </form>
+            <button />
+        </html>');
+
+        return $dom;
     }
 }

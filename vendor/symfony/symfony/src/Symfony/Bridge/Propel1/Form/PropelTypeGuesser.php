@@ -35,11 +35,18 @@ class PropelTypeGuesser implements FormTypeGuesserInterface
         }
 
         foreach ($table->getRelations() as $relation) {
-            if (in_array($relation->getType(), array(\RelationMap::MANY_TO_ONE, \RelationMap::ONE_TO_MANY))) {
-                if ($property == $relation->getForeignTable()->getName()) {
+            if ($relation->getType() === \RelationMap::MANY_TO_ONE) {
+                if (strtolower($property) === strtolower($relation->getName())) {
                     return new TypeGuess('model', array(
                         'class'    => $relation->getForeignTable()->getClassName(),
-                        'multiple' => \RelationMap::MANY_TO_ONE === $relation->getType() ? false : true,
+                        'multiple' => false,
+                    ), Guess::HIGH_CONFIDENCE);
+                }
+            } elseif ($relation->getType() === \RelationMap::ONE_TO_MANY) {
+                if (strtolower($property) === strtolower($relation->getPluralName())) {
+                    return new TypeGuess('model', array(
+                        'class'    => $relation->getForeignTable()->getClassName(),
+                        'multiple' => true,
                     ), Guess::HIGH_CONFIDENCE);
                 }
             } elseif ($relation->getType() === \RelationMap::MANY_TO_MANY) {
@@ -79,7 +86,15 @@ class PropelTypeGuesser implements FormTypeGuesserInterface
             case \PropelColumnTypes::BIGINT:
             case \PropelColumnTypes::NUMERIC:
                 return new TypeGuess('integer', array(), Guess::MEDIUM_CONFIDENCE);
+            case \PropelColumnTypes::ENUM:
             case \PropelColumnTypes::CHAR:
+                if ($column->getValueSet()) {
+                    //check if this is mysql enum
+                    $choices = $column->getValueSet();
+                    $labels = array_map('ucfirst', $choices);
+
+                    return new TypeGuess('choice', array('choices' => array_combine($choices, $labels)), Guess::MEDIUM_CONFIDENCE);
+                }
             case \PropelColumnTypes::VARCHAR:
                 return new TypeGuess('text', array(), Guess::MEDIUM_CONFIDENCE);
             case \PropelColumnTypes::LONGVARCHAR:
@@ -119,13 +134,6 @@ class PropelTypeGuesser implements FormTypeGuesserInterface
                     return new ValueGuess(null, Guess::MEDIUM_CONFIDENCE);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function guessMinLength($class, $property)
-    {
     }
 
     /**

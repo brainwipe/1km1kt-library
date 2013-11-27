@@ -23,7 +23,7 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * The pattern to phrase the format.
      */
-    const FORMAT_PATTERN = '#(\\\\?)<(/?)([a-z][a-z0-9_=;-]+)?>((?:(?!\\\\?<).)*)#is';
+    const FORMAT_PATTERN = '#(\\\\?)<(/?)([a-z][a-z0-9_=;-]*)?>((?: [^<\\\\]+ | (?!<(?:/?[a-z]|/>)). | .(?<=\\\\<) )*)#isx';
 
     private $decorated;
     private $styles = array();
@@ -44,12 +44,12 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Initializes console output formatter.
      *
-     * @param Boolean $decorated Whether this formatter should actually decorate strings
-     * @param array   $styles    Array of "name => FormatterStyle" instances
+     * @param Boolean          $decorated Whether this formatter should actually decorate strings
+     * @param OutputFormatterStyleInterface[] $styles    Array of "name => FormatterStyle" instances
      *
      * @api
      */
-    public function __construct($decorated = null, array $styles = array())
+    public function __construct($decorated = false, array $styles = array())
     {
         $this->decorated = (Boolean) $decorated;
 
@@ -130,7 +130,7 @@ class OutputFormatter implements OutputFormatterInterface
     public function getStyle($name)
     {
         if (!$this->hasStyle($name)) {
-            throw new \InvalidArgumentException('Undefined style: '.$name);
+            throw new \InvalidArgumentException(sprintf('Undefined style: %s', $name));
         }
 
         return $this->styles[strtolower($name)];
@@ -163,6 +163,8 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Replaces style of the output.
      *
+     * All escaped tags and tags that reference unknown styles are kept as is.
+     *
      * @param array $match
      *
      * @return string The replaced style
@@ -171,7 +173,7 @@ class OutputFormatter implements OutputFormatterInterface
     {
         // we got "\<" escaped char
         if ('\\' === $match[1]) {
-            return $match[0];
+            return $this->applyCurrentStyle($match[0]);
         }
 
         if ('' === $match[3]) {
@@ -179,11 +181,11 @@ class OutputFormatter implements OutputFormatterInterface
                 // we got "</>" tag
                 $this->styleStack->pop();
 
-                return $this->applyStyle($this->styleStack->getCurrent(), $match[4]);
+                return $this->applyCurrentStyle($match[4]);
             }
 
             // we got "<>" tag
-            return '<>'.$match[4];
+            return '<>'.$this->applyCurrentStyle($match[4]);
         }
 
         if (isset($this->styles[strtolower($match[3])])) {
@@ -192,7 +194,7 @@ class OutputFormatter implements OutputFormatterInterface
             $style = $this->createStyleFromString($match[3]);
 
             if (false === $style) {
-                return $match[0];
+                return $this->applyCurrentStyle($match[0]);
             }
         }
 
@@ -202,7 +204,7 @@ class OutputFormatter implements OutputFormatterInterface
             $this->styleStack->push($style);
         }
 
-        return $this->applyStyle($this->styleStack->getCurrent(), $match[4]);
+        return $this->applyCurrentStyle($match[4]);
     }
 
     /**
@@ -235,15 +237,14 @@ class OutputFormatter implements OutputFormatterInterface
     }
 
     /**
-     * Applies style to text if must be applied.
+     * Applies current style from stack to text, if must be applied.
      *
-     * @param OutputFormatterStyleInterface $style Style to apply
-     * @param string                        $text  Input text
+     * @param string $text Input text
      *
-     * @return string string Styled text
+     * @return string Styled text
      */
-    private function applyStyle(OutputFormatterStyleInterface $style, $text)
+    private function applyCurrentStyle($text)
     {
-        return $this->isDecorated() && strlen($text) > 0 ? $style->apply($text) : $text;
+        return $this->isDecorated() && strlen($text) > 0 ? $this->styleStack->getCurrent()->apply($text) : $text;
     }
 }

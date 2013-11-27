@@ -1,5 +1,5 @@
 ThousandMonkeysLibraryBundle_homepage:
-    pattern:  /hello/{name}
+    pattern:  /
     defaults: { _controller: ThousandMonkeysLibraryBundle:Default:index }
 version_add:
     pattern: /version/add

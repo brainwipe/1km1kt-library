@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Tests\BrowserKit;
+namespace Symfony\Component\BrowserKit\Tests;
 
 use Symfony\Component\BrowserKit\CookieJar;
 use Symfony\Component\BrowserKit\Cookie;
@@ -80,6 +80,13 @@ class CookieJarTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Symfony\Component\BrowserKit\Cookie', $cookieJar->get('bar'));
         $this->assertEquals('foo', $cookieJar->get('foo')->getValue(), '->updateFromSetCookie() updates cookies from a Set-Cookie header');
         $this->assertEquals('bar', $cookieJar->get('bar')->getValue(), '->updateFromSetCookie() keeps existing cookies');
+    }
+
+    public function testUpdateFromEmptySetCookie()
+    {
+        $cookieJar = new CookieJar();
+        $cookieJar->updateFromSetCookie(array(''));
+        $this->assertEquals(array(), $cookieJar->all());
     }
 
     public function testUpdateFromSetCookieWithMultipleCookies()
@@ -187,5 +194,14 @@ class CookieJarTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array(), array_keys($cookieJar->allValues('http://example.com/')));
         $this->assertEquals(array('foo' => 'bar1'), $cookieJar->allValues('http://foo.example.com/'));
         $this->assertEquals(array('foo' => 'bar2'), $cookieJar->allValues('http://bar.example.com/'));
+    }
+
+    public function testCookieWithWildcardDomain()
+    {
+        $cookieJar = new CookieJar();
+        $cookieJar->set(new Cookie('foo', 'bar', null, '/', '.example.com'));
+
+        $this->assertEquals(array('foo' => 'bar'), $cookieJar->allValues('http://www.example.com'));
+        $this->assertEmpty($cookieJar->allValues('http://wwwexample.com'));
     }
 }

@@ -21,18 +21,20 @@ class VersionController extends Controller
     	return $this->render('ThousandMonkeysLibraryBundle:Version:add.html.twig', array());
     }
 
-    public function dummyAction()
+    public function makedummyAction()
     {
+        $userId = $this->getUser()->getId;
+
     	$version = new Version();
     	$version->setVersionName("V1");
-    	$version->setFileURL("http://www.google.com");
-    	$version->setUploadedByUserId(0);
+    	$version->setWebFileDirPath("http://www.google.com");
+    	$version->setUploadedByUserId($userId);
 
 		$em = $this->getDoctrine()->getManager();
     	$em->persist($version);
     	$em->flush();
 
-    	return new Response('Created product id '.$version->getId());
+    	return new Response('Created version with id '.$version->getId());
 
     }
 }

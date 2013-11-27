@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
 /**
  * MonologExtension is an extension for the Monolog library.
@@ -47,23 +48,22 @@ class MonologExtension extends Extension
             $handlers = array();
 
             foreach ($config['handlers'] as $name => $handler) {
-                $handlers[] = array(
+                $handlers[$handler['priority']][] = array(
                     'id'       => $this->buildHandler($container, $name, $handler),
-                    'priority' => $handler['priority'],
                     'channels' => isset($handler['channels']) ? $handler['channels'] : null
                 );
             }
 
-            $handlers = array_reverse($handlers);
-            uasort($handlers, function($a, $b) {
-                if ($a['priority'] == $b['priority']) {
-                    return 0;
+            ksort($handlers);
+            $sortedHandlers = array();
+            foreach ($handlers as $priorityHandlers) {
+                foreach (array_reverse($priorityHandlers) as $handler) {
+                    $sortedHandlers[] = $handler;
                 }
+            }
 
-                return $a['priority'] < $b['priority'] ? -1 : 1;
-            });
             $handlersToChannels = array();
-            foreach ($handlers as $handler) {
+            foreach ($sortedHandlers as $handler) {
                 if (!in_array($handler['id'], $this->nestedHandlers)) {
                     $handlersToChannels[$handler['id']] = $handler['channels'];
                 }
@@ -82,6 +82,8 @@ class MonologExtension extends Extension
                 'Monolog\\Logger',
                 'Symfony\\Bridge\\Monolog\\Logger',
                 'Symfony\\Bridge\\Monolog\\Handler\\DebugHandler',
+                'Monolog\\Handler\\FingersCrossed\\ActivationStrategyInterface',
+                'Monolog\\Handler\\FingersCrossed\\ErrorLevelActivationStrategy',
             ));
         }
     }
@@ -220,6 +222,7 @@ class MonologExtension extends Extension
                 $handler['facility'],
                 $handler['level'],
                 $handler['bubble'],
+                $handler['logopts'],
             ));
             break;
 
@@ -238,12 +241,17 @@ class MonologExtension extends Extension
                 $message->addMethodCall('setFrom', array($handler['from_email']));
                 $message->addMethodCall('setTo', array($handler['to_email']));
                 $message->addMethodCall('setSubject', array($handler['subject']));
+
+                if (isset($handler['content_type'])) {
+                    $message->addMethodCall('setContentType', array($handler['content_type']));
+                }
+
                 $messageId = sprintf('%s.mail_prototype', $handlerId);
                 $container->setDefinition($messageId, $message);
                 $prototype = new Reference($messageId);
             }
             $definition->setArguments(array(
-                new Reference('mailer'),
+                new Reference($handler['mailer']),
                 $prototype,
                 $handler['level'],
                 $handler['bubble'],
@@ -255,6 +263,49 @@ class MonologExtension extends Extension
                 $handler['to_email'],
                 $handler['subject'],
                 $handler['from_email'],
+                $handler['level'],
+                $handler['bubble'],
+            ));
+            break;
+
+        case 'socket':
+            $definition->setArguments(array(
+                $handler['connection_string'],
+                $handler['level'],
+                $handler['bubble'],
+            ));
+            if (isset($handler['timeout'])) {
+                $definition->addMethodCall('setTimeout', array($handler['timeout']));
+            }
+            if (isset($handler['connection_timeout'])) {
+                $definition->addMethodCall('setConnectionTimeout', array($handler['connection_timeout']));
+            }
+            if (isset($handler['persistent'])) {
+                $definition->addMethodCall('setPersistent', array($handler['persistent']));
+            }
+            break;
+
+        case 'pushover':
+            $definition->setArguments(array(
+                $handler['token'],
+                $handler['user'],
+                $handler['title'],
+                $handler['level'],
+                $handler['bubble'],
+            ));
+            break;
+
+        case 'raven':
+            $clientId = 'monolog.raven.client.' . sha1($handler['dsn']);
+            if (!$container->hasDefinition($clientId)) {
+                $client = new Definition("Raven_Client", array(
+                    $handler['dsn']
+                ));
+                $client->setPublic(false);
+                $container->setDefinition($clientId, $client);
+            }
+            $definition->setArguments(array(
+                new Reference($clientId),
                 $handler['level'],
                 $handler['bubble'],
             ));

@@ -1,3 +1,4 @@
+# This file is auto-generated during the composer install
 parameters:
     database_driver: pdo_mysql
     database_host: localhost
@@ -11,7 +12,7 @@ parameters:
     mailer_password: null
     locale: en
     secret: 10c1b63410c4dcab5c19e54220ae28feb
-    phpbb_forum_url: http://localhost/1km1kt/
+    phpbb_forum_url: http://localhost/1km1kt/phpbb
     phpbb_fourm_path: E:/Web/1KM1KT/phpbb3/
     phpbb_db_server: localhost
     phpbb_db_catalog: 1km1kt

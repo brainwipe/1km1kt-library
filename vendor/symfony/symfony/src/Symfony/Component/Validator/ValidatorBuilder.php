@@ -13,9 +13,7 @@ namespace Symfony\Component\Validator;
 
 use Symfony\Component\Validator\Mapping\ClassMetadataFactory;
 use Symfony\Component\Validator\Exception\ValidatorException;
-use Symfony\Component\Validator\Mapping\BlackholeMetadataFactory;
 use Symfony\Component\Validator\Mapping\Loader\LoaderChain;
-use Symfony\Component\Validator\Mapping\ClassMetadataFactoryInterface;
 use Symfony\Component\Validator\Mapping\Cache\CacheInterface;
 use Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader;
 use Symfony\Component\Validator\Mapping\Loader\YamlFileLoader;
@@ -23,6 +21,7 @@ use Symfony\Component\Validator\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Validator\Mapping\Loader\YamlFilesLoader;
 use Symfony\Component\Validator\Mapping\Loader\XmlFileLoader;
 use Symfony\Component\Validator\Mapping\Loader\XmlFilesLoader;
+use Symfony\Component\Translation\TranslatorInterface;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\CachedReader;
@@ -61,7 +60,7 @@ class ValidatorBuilder implements ValidatorBuilderInterface
     private $annotationReader = null;
 
     /**
-     * @var ClassMetadataFactoryInterface
+     * @var MetadataFactoryInterface
      */
     private $metadataFactory;
 
@@ -76,11 +75,23 @@ class ValidatorBuilder implements ValidatorBuilderInterface
     private $metadataCache;
 
     /**
+     * @var TranslatorInterface
+     */
+    private $translator;
+
+    /**
+     * @var null|string
+     */
+    private $translationDomain;
+
+    /**
      * {@inheritdoc}
      */
     public function addObjectInitializer(ObjectInitializerInterface $initializer)
     {
         $this->initializers[] = $initializer;
+
+        return $this;
     }
 
     /**
@@ -89,6 +100,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
     public function addObjectInitializers(array $initializers)
     {
         $this->initializers = array_merge($this->initializers, $initializers);
+
+        return $this;
     }
 
     /**
@@ -101,6 +114,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->xmlMappings[] = $path;
+
+        return $this;
     }
 
     /**
@@ -113,6 +128,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->xmlMappings = array_merge($this->xmlMappings, $paths);
+
+        return $this;
     }
 
     /**
@@ -125,6 +142,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->yamlMappings[] = $path;
+
+        return $this;
     }
 
     /**
@@ -137,6 +156,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->yamlMappings = array_merge($this->yamlMappings, $paths);
+
+        return $this;
     }
 
     /**
@@ -149,6 +170,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->methodMappings[] = $methodName;
+
+        return $this;
     }
 
     /**
@@ -161,6 +184,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->methodMappings = array_merge($this->methodMappings, $methodNames);
+
+        return $this;
     }
 
     /**
@@ -181,6 +206,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $this->annotationReader = $annotationReader;
+
+        return $this;
     }
 
     /**
@@ -189,18 +216,22 @@ class ValidatorBuilder implements ValidatorBuilderInterface
     public function disableAnnotationMapping()
     {
         $this->annotationReader = null;
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setMetadataFactory(ClassMetadataFactoryInterface $metadataFactory)
+    public function setMetadataFactory(MetadataFactoryInterface $metadataFactory)
     {
         if (count($this->xmlMappings) > 0 || count($this->yamlMappings) > 0 || count($this->methodMappings) > 0 || null !== $this->annotationReader) {
             throw new ValidatorException('You cannot set a custom metadata factory after adding custom mappings. You should do either of both.');
         }
 
         $this->metadataFactory = $metadataFactory;
+
+        return $this;
     }
 
     /**
@@ -211,8 +242,10 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         if (null !== $this->metadataFactory) {
             throw new ValidatorException('You cannot set a custom metadata cache after setting a custom metadata factory. Configure your metadata factory instead.');
         }
-        
+
         $this->metadataCache = $cache;
+
+        return $this;
     }
 
     /**
@@ -221,6 +254,28 @@ class ValidatorBuilder implements ValidatorBuilderInterface
     public function setConstraintValidatorFactory(ConstraintValidatorFactoryInterface $validatorFactory)
     {
         $this->validatorFactory = $validatorFactory;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setTranslator(TranslatorInterface $translator)
+    {
+        $this->translator = $translator;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setTranslationDomain($translationDomain)
+    {
+        $this->translationDomain = $translationDomain;
+
+        return $this;
     }
 
     /**
@@ -265,7 +320,8 @@ class ValidatorBuilder implements ValidatorBuilderInterface
         }
 
         $validatorFactory = $this->validatorFactory ?: new ConstraintValidatorFactory();
+        $translator = $this->translator ?: new DefaultTranslator();
 
-        return new Validator($metadataFactory, $validatorFactory, $this->initializers);
+        return new Validator($metadataFactory, $validatorFactory, $translator, $this->translationDomain, $this->initializers);
     }
 }

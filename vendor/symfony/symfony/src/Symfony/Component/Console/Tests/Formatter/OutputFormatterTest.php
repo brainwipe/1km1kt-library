@@ -9,7 +9,6 @@
  * file that was distributed with this source code.
  */
 
-
 namespace Symfony\Component\Console\Tests\Formatter;
 
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -74,6 +73,26 @@ class FormatterStyleTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testStyleMatchingNotGreedy()
+    {
+        $formatter = new OutputFormatter(true);
+
+        $this->assertEquals(
+            "(\033[32m>=2.0,<2.3\033[0m)",
+            $formatter->format('(<info>>=2.0,<2.3</info>)')
+        );
+    }
+
+    public function testStyleEscaping()
+    {
+        $formatter = new OutputFormatter(true);
+
+        $this->assertEquals(
+            "(\033[32mz>=2.0,<a2.3\033[0m)",
+            $formatter->format('(<info>'.$formatter->escape('z>=2.0,<a2.3').'</info>)')
+        );
+    }
+
     public function testDeepNestedStyles()
     {
         $formatter = new OutputFormatter(true);
@@ -94,7 +113,10 @@ class FormatterStyleTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($style, $formatter->getStyle('test'));
         $this->assertNotEquals($style, $formatter->getStyle('info'));
 
-        $this->assertEquals("\033[34;47msome custom msg\033[0m", $formatter->format('<test>some custom msg</test>'));
+        $style = new OutputFormatterStyle('blue', 'white');
+        $formatter->setStyle('b', $style);
+
+        $this->assertEquals("\033[34;47msome \033[0m\033[34;47mcustom\033[0m\033[34;47m msg\033[0m", $formatter->format('<test>some <b>custom</b> msg</test>'));
     }
 
     public function testRedefineStyle()
@@ -113,6 +135,12 @@ class FormatterStyleTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals("\033[34;41msome text\033[0m", $formatter->format('<fg=blue;bg=red>some text</>'));
         $this->assertEquals("\033[34;41msome text\033[0m", $formatter->format('<fg=blue;bg=red>some text</fg=blue;bg=red>'));
+    }
+
+    public function testNonStyleTag()
+    {
+        $formatter = new OutputFormatter(true);
+        $this->assertEquals("\033[32msome \033[0m\033[32m<tag> styled \033[0m\033[32m<p>single-char tag\033[0m\033[32m</p>\033[0m", $formatter->format('<info>some <tag> styled <p>single-char tag</p></info>'));
     }
 
     public function testNotDecoratedFormatter()

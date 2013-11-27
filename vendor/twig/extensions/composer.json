@@ -12,9 +12,14 @@
         }
     ],
     "require": {
-        "twig/twig": "1.*"
+        "twig/twig": "~1.0"
     },
     "autoload": {
         "psr-0": { "Twig_Extensions_": "lib/" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
     }
 }

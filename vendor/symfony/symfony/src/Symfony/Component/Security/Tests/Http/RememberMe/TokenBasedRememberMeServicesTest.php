@@ -14,7 +14,6 @@ namespace Symfony\Component\Security\Tests\Http\RememberMe;
 use Symfony\Component\Security\Http\RememberMe\RememberMeServicesInterface;
 
 use Symfony\Component\Security\Core\Authentication\Token\RememberMeToken;
-use Symfony\Component\Security\Core\Authentication\Token\Token;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -179,7 +178,7 @@ class TokenBasedRememberMeServicesTest extends \PHPUnit_Framework_TestCase
 
     public function testLoginSuccessIgnoresTokensWhichDoNotContainAnUserInterfaceImplementation()
     {
-        $service = $this->getService(null, array('name' => 'foo', 'always_remember_me' => true));
+        $service = $this->getService(null, array('name' => 'foo', 'always_remember_me' => true, 'path' => null, 'domain' => null));
         $request = new Request;
         $response = new Response;
         $token = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');

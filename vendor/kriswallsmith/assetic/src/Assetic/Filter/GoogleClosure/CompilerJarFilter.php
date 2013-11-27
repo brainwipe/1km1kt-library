@@ -3,7 +3,7 @@
 /*
  * This file is part of the Assetic package, an OpenSky project.
  *
- * (c) 2010-2012 OpenSky Project Inc
+ * (c) 2010-2013 OpenSky Project Inc
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -42,6 +42,10 @@ class CompilerJarFilter extends BaseCompilerFilter
             $this->jarPath,
         ));
 
+        if (null !== $this->timeout) {
+            $pb->setTimeout($this->timeout);
+        }
+
         if (null !== $this->compilationLevel) {
             $pb->add('--compilation_level')->add($this->compilationLevel);
         }
@@ -74,6 +78,10 @@ class CompilerJarFilter extends BaseCompilerFilter
             $pb->add('--warning_level')->add($this->warningLevel);
         }
 
+        if (null !== $this->language) {
+            $pb->add('--language_in')->add($this->language);
+        }
+
         $pb->add('--js')->add($cleanup[] = $input = tempnam(sys_get_temp_dir(), 'assetic_google_closure_compiler'));
         file_put_contents($input, $asset->getContent());
 
@@ -81,7 +89,7 @@ class CompilerJarFilter extends BaseCompilerFilter
         $code = $proc->run();
         array_map('unlink', $cleanup);
 
-        if (0 < $code) {
+        if (0 !== $code) {
             throw FilterException::fromProcess($proc)->setInput($asset->getContent());
         }
 

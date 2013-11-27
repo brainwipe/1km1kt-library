@@ -32,7 +32,7 @@ class DoctrineStep implements StepInterface
     public $host;
 
     /**
-     * @Assert\Min(0)
+     * @Assert\Range(min = "0")
      */
     public $port;
 
@@ -47,6 +47,8 @@ class DoctrineStep implements StepInterface
     public $user;
 
     public $password;
+
+    public $path;
 
     public function __construct(array $parameters)
     {
@@ -119,7 +121,7 @@ class DoctrineStep implements StepInterface
     /**
      * @return array
      */
-    static public function getDriverKeys()
+    public static function getDriverKeys()
     {
         return array_keys(static::getDrivers());
     }
@@ -127,7 +129,7 @@ class DoctrineStep implements StepInterface
     /**
      * @return array
      */
-    static public function getDrivers()
+    public static function getDrivers()
     {
         return array(
             'pdo_mysql'  => 'MySQL (PDO)',
